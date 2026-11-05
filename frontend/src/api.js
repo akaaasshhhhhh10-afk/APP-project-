@@ -1,4 +1,6 @@
 // Fetch client with session persistence and proactive JWT refresh (report module 1 & 2).
+// Empty in dev (Vite proxies /api); set VITE_API_BASE to the deployed backend URL in production.
+export const API_BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '');
 const SESSION_KEY = 'alumni-connect.auth-session';
 const REFRESH_BUFFER_SECONDS = 60;
 
@@ -42,7 +44,7 @@ async function parse(res) {
 async function ensureFresh() {
   const s = loadSession();
   if (!s || s.expires_at > Math.floor(Date.now() / 1000) + REFRESH_BUFFER_SECONDS) return;
-  refreshing ??= fetch('/api/auth/refresh', {
+  refreshing ??= fetch(`${API_BASE}/api/auth/refresh`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refresh_token: s.refresh_token }),
@@ -73,8 +75,10 @@ async function request(path, { method = 'GET', json, form, auth = true } = {}) {
   } else if (form) {
     body = form;
   }
-  return parse(await fetch(path, { method, headers, body }));
+  return parse(await fetch(API_BASE + path, { method, headers, body }));
 }
+
+const withPoster = (e) => (e.poster_url ? { ...e, poster_url: API_BASE + e.poster_url } : e);
 
 export const api = {
   signup: (data) => request('/api/auth/signup', { method: 'POST', json: data, auth: false }),
@@ -91,8 +95,8 @@ export const api = {
     request('/api/mentorship', { method: 'POST', json: { alumni_profile_id, message } }),
   resolveRequest: (id, status) => request(`/api/mentorship/${id}`, { method: 'PATCH', json: { status } }),
 
-  events: () => request('/api/events'),
-  createEvent: (form) => request('/api/events', { method: 'POST', form }),
+  events: () => request('/api/events').then((list) => list.map(withPoster)),
+  createEvent: (form) => request('/api/events', { method: 'POST', form }).then(withPoster),
   rsvp: (id) => request(`/api/events/${id}/rsvp`, { method: 'POST' }),
   deleteEvent: (id) => request(`/api/events/${id}`, { method: 'DELETE' }),
 

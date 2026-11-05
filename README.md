@@ -64,3 +64,13 @@ Open http://localhost:5173. Vite proxies `/api/auth|alumni|mentorship` to Flask 
   since that needs real OAuth credentials.
 - No LocalStorage offline fallback; the session is the only thing persisted client-side.
 - Set `ALUMNI_JWT_SECRET` to a real secret before deploying anywhere.
+
+## Deploying to Vercel
+
+Create two Vercel projects from this repo:
+
+1. **Backend** - Root Directory `backend`. `backend/main.py` is the single entrypoint (FastAPI with the Flask app
+   mounted underneath). Set env vars `ALUMNI_JWT_SECRET` and `ALUMNI_CORS_ORIGINS` (the frontend's URL).
+   SQLite lives in `/tmp` on Vercel, so accounts, requests and uploaded posters reset on cold starts: demo only.
+   For real use, move to a hosted database and object storage.
+2. **Frontend** - Root Directory `frontend`, framework Vite. Set `VITE_API_BASE` to the backend's URL.
