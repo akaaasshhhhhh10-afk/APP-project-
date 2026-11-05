@@ -1,0 +1,7 @@
+backend/.venv/
+backend/alumni.db*
+backend/uploads/*
+!backend/uploads/.gitkeep
+__pycache__/
+frontend/node_modules/
+frontend/dist/
